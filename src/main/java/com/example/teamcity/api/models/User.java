@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data         // генерирует getters, setters, toString, equals, hashCode
 @AllArgsConstructor   // конструктор со ВСЕМИ полями
 @NoArgsConstructor    // конструктор БЕЗ аргументов
-public class User {
+public class User extends BaseModel {
     private String username;
     private String password;
 }
