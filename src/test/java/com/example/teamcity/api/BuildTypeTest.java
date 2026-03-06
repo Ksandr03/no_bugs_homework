@@ -7,8 +7,7 @@ import com.example.teamcity.api.models.Roles;
 import com.example.teamcity.api.requests.CheckedRequests;
 import com.example.teamcity.api.requests.unchecked.UncheckedBase;
 import com.example.teamcity.api.spec.Specifications;
-import org.apache.http.HttpStatus;
-import org.hamcrest.Matchers;
+import com.example.teamcity.api.spec.ValidationResponseSpecifications;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -34,7 +33,7 @@ public class BuildTypeTest extends BaseApiTest {
 
         var createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).read(testData.getBuildType().getId());
 
-        softy.assertEquals(testData.getBuildType().getName(), createdBuildType.getName(), "Build type name is not correct");
+        softy.assertEquals(createdBuildType, testData.getBuildType(), "Build type is not correct");
     }
 
     @Test(description = "User should not be able to create two build types with the same id", groups = {"Negative", "CRUD"})
@@ -50,8 +49,8 @@ public class BuildTypeTest extends BaseApiTest {
         userCheckRequests.getRequest(BUILD_TYPES).create(testData.getBuildType());
         new UncheckedBase(Specifications.authSpec(testData.getUser()), BUILD_TYPES)
                 .create(buildTypeWithSameId)
-                .then().assertThat().statusCode(HttpStatus.SC_BAD_REQUEST)
-                .body(Matchers.containsString("The build configuration / template ID \"%s\" is already used by another configuration or template".formatted(testData.getBuildType().getId())));
+                .then().spec(ValidationResponseSpecifications
+                        .checkBuildTypeWithIdAlreadyExist(testData.getBuildType().getId()));
     }
 
     @Test(description = "Project admin should be able to create build type for their project", groups = {"Positive", "Roles"})
@@ -74,7 +73,7 @@ public class BuildTypeTest extends BaseApiTest {
 
         step("Check buildType was created successfully");
         var createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).read(testData.getBuildType().getId());
-        softy.assertEquals(testData.getBuildType().getName(), createdBuildType.getName(), "Build type name is not correct");
+        softy.assertEquals(createdBuildType, testData.getBuildType(), "Build type is not correct");
     }
 
     @Test(description = "Project admin should not be able to create build type for not their project", groups = {"Negative", "Roles"})
@@ -106,6 +105,6 @@ public class BuildTypeTest extends BaseApiTest {
         step("Create buildType for project1 by user2 — should be forbidden");
         new UncheckedBase(Specifications.authSpec(testData2.getUser()), BUILD_TYPES)
                 .create(testData.getBuildType())
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().spec(ValidationResponseSpecifications.checkForbidden());
     }
 }
